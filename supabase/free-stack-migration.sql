@@ -1,0 +1,11 @@
+alter table makers add column if not exists address text;
+alter table makers add column if not exists latitude double precision;
+alter table makers add column if not exists longitude double precision;
+alter table makers add column if not exists whatsapp text;
+alter table makers add column if not exists contact_email text;
+alter table leads add column if not exists latitude double precision;
+alter table leads add column if not exists longitude double precision;
+alter table leads add column if not exists source text not null default 'OpenStreetMap';
+alter table leads add column if not exists source_url text;
+alter table leads add column if not exists external_id text;
+create unique index if not exists leads_maker_external_id_unique on leads(maker_id, external_id) where external_id is not null;

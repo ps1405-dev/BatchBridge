@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BatchBridge — AI wholesale sales agent</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="auth.css" />
+    <style>[hidden]{display:none !important}</style>
+  </head>
+  <body>
+    <section id="auth-screen" class="auth-screen">
+      <div class="auth-panel">
+        <a class="auth-brand" href="#"><span class="brand-mark">B</span>BatchBridge</a>
+        <span class="eyebrow">WHOLESALE GROWTH, ON AUTOPILOT</span>
+        <h1>Turn your home business into local wholesale orders.</h1>
+        <p>Start with one maker. Let the sales agent find, pitch, and follow up with nearby B2B buyers.</p>
+        <form id="login-form"><label>Email address<input id="login-email" type="email" placeholder="you@business.com" required /></label><label>Your name<input id="login-name" type="text" placeholder="Asha Mehta" required /></label><button class="primary" type="submit">Start my pilot →</button></form>
+        <button class="quiet demo-login" id="demo-login">Explore with the Asha demo account</button>
+        <small>Demo login is stored only in this browser. Connect a real auth provider before production.</small>
+      </div>
+      <div class="auth-art"><span>✦</span><p>One maker<br/>One paid order<br/>A repeatable system</p></div>
+    </section>
+    <main class="shell" id="app-shell" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="#"><span class="brand-mark">B</span><span>BatchBridge</span></a>
+        <p class="tagline">AI wholesale sales agent for home makers</p>
+        <nav>
+          <button class="nav-item active" data-view="command"><span>⌘</span> Command centre</button>
+          <button class="nav-item" data-view="catalogue"><span>◫</span> Catalogue</button>
+          <button class="nav-item" data-view="leads"><span>◎</span> Local leads</button>
+          <button class="nav-item" data-view="outreach"><span>↗</span> Outreach</button>
+          <button class="nav-item" data-view="decisions"><span>✦</span> Agent decisions</button>
+        </nav>
+        <div class="pilot-card"><span class="eyebrow">PILOT MODE</span><strong>1 maker · 25 local prospects</strong><small>Prove the workflow before scaling it.</small></div>
+      </aside>
+
+      <section class="workspace">
+        <header><div><p class="eyebrow">WHOLESALE GROWTH, ON AUTOPILOT</p><h1 id="page-title">Good morning, Asha.</h1></div><div class="header-actions"><button class="quiet account-name" id="logout">Log out</button><button class="primary" id="run-agent">✦ Run sales agent</button></div></header>
+        <section id="command" class="view active">
+          <div class="hero-grid">
+            <article class="maker-card"><div class="avatar">AM</div><div><span class="eyebrow">YOUR MAKER</span><h2>Asha’s Oven Stories</h2><p>Eggless bakes · Koramangala, Bengaluru</p></div><span class="status">Ready to sell</span></article>
+            <article class="next-card"><span class="eyebrow">AGENT’S NEXT BEST MOVE</span><h2>Pitch eggless brownie trial packs to 3 nearby cafés.</h2><p>Local menus show a gap; customers explicitly request eggless desserts.</p><button class="text-button" data-jump="leads">Review the 3 matches →</button></article>
+          </div>
+          <div class="metrics"><article><span>Wholesale pipeline</span><strong>₹12,480</strong><small>8 active prospects</small></article><article><span>Warm replies</span><strong>3</strong><small>+2 this week</small></article><article><span>Sample requests</span><strong>2</strong><small>1 needs confirmation</small></article><article><span>Orders won</span><strong>1</strong><small>₹1,920 gross order value</small></article></div>
+          <div class="split">
+            <article class="panel"><div class="panel-head"><div><span class="eyebrow">AI SALES QUEUE</span><h2>Actions that move revenue</h2></div><button class="quiet" data-jump="outreach">View outreach</button></div><div id="queue" class="queue"></div></article>
+            <article class="panel evidence"><span class="eyebrow">JUDGING EVIDENCE</span><h2>AI operating in production</h2><p>Every recommendation, approval, follow-up, and outcome is recorded for your submission.</p><div class="evidence-row"><b>18</b><span>agent decisions logged</span></div><div class="evidence-row"><b>7</b><span>outreach messages drafted</span></div><div class="evidence-row"><b>₹199</b><span>platform setup revenue</span></div><button class="secondary" data-jump="decisions">Open decision log</button></article>
+          </div>
+        </section>
+
+        <section id="catalogue" class="view"><div class="view-heading"><div><span class="eyebrow">MAKER PROFILE</span><h2>Wholesale-ready catalogue</h2><p id="catalogue-subtitle">Built from Asha’s WhatsApp photos, voice notes, and prices.</p></div><button class="primary" id="add-product">+ Add product</button></div><div class="catalogue-grid" id="catalogue-grid"></div></section>
+        <section id="leads" class="view"><div class="view-heading"><div><span class="eyebrow">LOCAL DEMAND MATCHING</span><h2>Prospects ranked by the agent</h2><p>Scores blend distance, menu gap, product fit and buyer signals.</p></div><button class="secondary" id="rescore">✦ Re-score prospects</button></div><div class="lead-list" id="lead-list"></div></section>
+        <section id="outreach" class="view"><div class="view-heading"><div><span class="eyebrow">HUMAN-APPROVED SALES</span><h2>Outreach workspace</h2><p>Agent drafts; Asha stays in control before every send.</p></div></div><div class="outreach-grid"><article class="panel compose"><label>TO</label><select id="recipient"><option value="Cafe Juniper">Café Juniper</option><option value="The Daily Grind">The Daily Grind</option><option value="Mellow Yellow Café">Mellow Yellow Café</option></select><label>MESSAGE</label><textarea id="message"></textarea><div class="compose-actions"><button class="secondary" id="redraft">✦ Re-draft</button><button class="primary" id="approve-send">Approve &amp; send</button></div><small id="send-note"></small></article><article class="panel"><span class="eyebrow">OUTREACH STATUS</span><h2>Conversation pipeline</h2><div id="outreach-list" class="outreach-list"></div></article></div></section>
+        <section id="decisions" class="view"><div class="view-heading"><div><span class="eyebrow">AUDITABLE AI-NATIVE OPERATIONS</span><h2>Agent decision log</h2><p>Evidence of decisions the agent made, the reason, and human oversight.</p></div><button class="secondary" id="export-log">Export evidence</button></div><div class="decision-list" id="decision-list"></div></section>
+      </section>
+    </main>
+    <dialog id="product-dialog" class="product-dialog"><form method="dialog" id="product-form"><button class="dialog-close" value="cancel" aria-label="Close">×</button><span class="eyebrow">CATALOGUE ITEM</span><h2>Add a wholesale product</h2><label>Product name<input id="product-name" required placeholder="Eggless brownie bites" /></label><label>Wholesale price<input id="product-price" required placeholder="₹32 / piece" /></label><label>Daily capacity<input id="product-capacity" required placeholder="60/day" /></label><label>Product emoji<input id="product-emoji" required value="🍰" /></label><button class="primary" value="default" id="save-product">Save product</button></form></dialog>
+    <div id="toast" class="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

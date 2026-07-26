@@ -1,0 +1,21 @@
+{
+  "name": "batchbridge",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "@supabase/supabase-js": "latest",
+    "leaflet": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-leaflet": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  }
+}
