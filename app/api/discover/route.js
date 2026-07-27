@@ -1,4 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from '@google/genai';
+
+const CHANNELS={food_retail:['nwr["amenity"~"cafe|restaurant|fast_food"]','nwr["shop"~"bakery|confectionery|pastry|supermarket"]'],beauty_retail:['nwr["shop"~"beauty|cosmetics|chemist|department_store"]'],gift_retail:['nwr["shop"~"gift|variety_store|department_store"]'],general_retail:['nwr["shop"~"convenience|supermarket|department_store"]'],hospitality:['nwr["tourism"~"hotel|guest_house"]']};
+
+async function chooseChannels(product){try{const ai=new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});const response=await ai.models.generateContent({model:'gemini-3.6-flash',contents:`Choose up to 3 realistic B2B buyer channels for this product. Return JSON only: {channels:string[]}. Allowed channels: food_retail, beauty_retail, gift_retail, general_retail, hospitality. Product: ${JSON.stringify({name:product.name,description:product.description,market_segment:product.market_segment})}. Do not choose channels that do not make commercial sense.`,config:{responseMimeType:'application/json'}});const channels=JSON.parse(response.text).channels?.filter(x=>CHANNELS[x]);return channels?.length?channels:['general_retail']}catch{return['general_retail']}}
 
 async function nearbyBusinesses(query) {
   const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
@@ -29,20 +34,16 @@ export async function POST(request) {
     let lat=latitude||maker.latitude,lon=longitude||maker.longitude;
     if(!lat||!lon){const geo=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(maker.address)}`,{headers:{'User-Agent':'BatchBridge hackathon pilot (contact: support@batchbridge.local)',Accept:'application/json'}});const places=await geo.json();if(!places[0])return Response.json({error:'Address was not found. Include city and postcode, then retry.'},{status:404});lat=Number(places[0].lat);lon=Number(places[0].lon)}
     await admin.from('makers').update({latitude:lat,longitude:lon}).eq('id',makerId);
-    // A maker can sell very different products. Match buyers to the selected product,
-    // never to the maker's broad business category.
-    const words=`${product.name||''} ${product.description||''}`.toLowerCase();
-    const soap=/soap|skincare|skin care|cosmetic|beauty/.test(words);
-    const food=/cake|pastry|bakery|brownie|cookie|chocolate|food|snack/.test(words);
-    const selectors=soap?'nwr["shop"~"beauty|cosmetics|gift|variety_store|department_store|convenience"]':food?'nwr["amenity"~"cafe|restaurant|fast_food"] ; nwr["shop"~"bakery|confectionery|pastry|supermarket"]':'nwr["shop"~"gift|variety_store|convenience|supermarket|department_store"]';
-    const query=`[out:json][timeout:8];(${selectors.split(' ; ').map(s=>`${s}(around:3500,${lat},${lon});`).join('')});out center tags;`;
+    const channels=await chooseChannels(product);
+    const selectors=[...new Set(channels.flatMap(channel=>CHANNELS[channel]))];
+    const query=`[out:json][timeout:8];(${selectors.map(s=>`${s}(around:3500,${lat},${lon});`).join('')});out center tags;`;
     const elements=await nearbyBusinesses(query);
     const seen=new Set();
     const rows=elements.filter(x=>x.tags?.name).map(x=>({maker_id:makerId,product_id:productId,user_id:user.id,business_name:x.tags.name,score:0,rationale:'Awaiting Gemini ranking of this source-linked OpenStreetMap result.',offer:'',outreach_draft:'',latitude:x.lat||x.center?.lat,longitude:x.lon||x.center?.lon,source:'OpenStreetMap',source_url:`https://www.openstreetmap.org/${x.type}/${x.id}`,external_id:`osm:${x.type}:${x.id}`})).filter(row=>!seen.has(row.external_id)&&seen.add(row.external_id)).slice(0,30);
     const {error:deleteError}=await admin.from('leads').delete().eq('maker_id',makerId).eq('user_id',user.id).eq('product_id',productId);
     if(deleteError)throw new Error(`Could not clear previous results: ${deleteError.message}`);
     if(rows.length){const {error:insertError}=await admin.from('leads').insert(rows);if(insertError)throw new Error(`Could not save discovered businesses: ${insertError.message}`)}
-    await admin.from('agent_runs').insert({maker_id:makerId,user_id:user.id,action:'discover_nearby_openstreetmap',input_summary:`${product.name}; ${maker.address||'browser location'}`,output_summary:`${rows.length} OpenStreetMap businesses discovered`});
-    return Response.json({discovered:rows.length});
+    await admin.from('agent_runs').insert({maker_id:makerId,user_id:user.id,action:'discover_nearby_openstreetmap',input_summary:`${product.name}; AI channels: ${channels.join(', ')}`,output_summary:`${rows.length} OpenStreetMap businesses discovered`});
+    return Response.json({discovered:rows.length,channels});
   }catch(error){return Response.json({error:error.message||'Discovery failed'},{status:500})}
 }
