@@ -19,6 +19,7 @@ export default function Home() {
     [viewId, setViewId] = useState(""),
     [advice, setAdvice] = useState();
   const requestLock = useRef(false);
+  const productLock = useRef(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -95,8 +96,11 @@ export default function Home() {
   }
   async function add(e) {
     e.preventDefault();
+    if (productLock.current) return;
+    productLock.current = true;
+    setBusy("product");
     const f = new FormData(e.currentTarget), name=String(f.get("name")).trim();
-    if(products.some(p=>p.name.trim().toLowerCase()===name.toLowerCase())){setNotice(`“${name}” already exists. Edit the existing product instead of adding it again.`);return}
+    if(products.some(p=>p.name.trim().toLowerCase()===name.toLowerCase())){setNotice(`“${name}” already exists. Edit the existing product instead of adding it again.`);productLock.current=false;setBusy("");return}
     const
       { error } = await supabase
         .from("products")
@@ -108,7 +112,9 @@ export default function Home() {
         });
     setNotice(error?.message || "Product added.");
     if (!error) e.currentTarget.reset();
-    load();
+    await load();
+    productLock.current=false;
+    setBusy("");
   }
   async function api(path, productId, body = {}, label) {
     if (requestLock.current) return;
@@ -228,9 +234,9 @@ export default function Home() {
               <input name="name" required placeholder="Product" />
               <input name="price" required placeholder="Wholesale price" />
               <input name="capacity" required placeholder="Capacity" />
-              <button>Add product</button>
+              <button disabled={busy === "product"}>{busy === "product" ? "Adding product…" : "Add product"}</button>
             </form>
-            <p className="muted">{products.length ? products.map((p) => `${p.name} · ${p.wholesale_price} · ${p.capacity}`).join(" | ") : "No products added yet."}</p>
+            <div className="product-catalogue">{products.length ? products.map(p => <span key={p.id}><b>{p.name}</b><small>{p.wholesale_price} · {p.capacity}</small></span>) : <p className="muted">No products added yet.</p>}</div>
           </div>
         </article>
         <article className="step">
