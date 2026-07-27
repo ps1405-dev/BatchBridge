@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@supabase/supabase-js";
 const Map = dynamic(() => import("./components/NearbyMap"), { ssr: false });
@@ -18,6 +18,7 @@ export default function Home() {
     [rankId, setRankId] = useState(""),
     [viewId, setViewId] = useState(""),
     [advice, setAdvice] = useState();
+  const requestLock = useRef(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -108,6 +109,8 @@ export default function Home() {
     load();
   }
   async function api(path, productId, body = {}, label) {
+    if (requestLock.current) return;
+    requestLock.current = true;
     setBusy(label);
     try {
       const r = await fetch(path, {
@@ -128,6 +131,7 @@ export default function Home() {
       setNotice("Could not contact the server.");
     } finally {
       setBusy("");
+      requestLock.current = false;
     }
   }
   function locate() {
@@ -224,6 +228,7 @@ export default function Home() {
               <input name="capacity" required placeholder="Capacity" />
               <button>Add product</button>
             </form>
+            <p className="muted">{products.length ? products.map((p) => `${p.name} · ${p.wholesale_price} · ${p.capacity}`).join(" | ") : "No products added yet."}</p>
           </div>
         </article>
         <article className="step">
