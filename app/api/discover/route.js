@@ -30,8 +30,11 @@ export async function POST(request) {
     await admin.from('makers').update({latitude:lat,longitude:lon}).eq('id',makerId);
     const query=`[out:json][timeout:40];(nwr["amenity"~"cafe|restaurant|fast_food"](around:8000,${lat},${lon});nwr["shop"~"bakery|confectionery|pastry"](around:8000,${lat},${lon}););out center tags;`;
     const elements=await nearbyBusinesses(query);
-    const rows=elements.filter(x=>x.tags?.name).slice(0,30).map(x=>({maker_id:makerId,product_id:productId,user_id:user.id,business_name:x.tags.name,score:0,rationale:'Awaiting Gemini ranking of this source-linked OpenStreetMap result.',offer:'',outreach_draft:'',latitude:x.lat||x.center?.lat,longitude:x.lon||x.center?.lon,source:'OpenStreetMap',source_url:`https://www.openstreetmap.org/${x.type}/${x.id}`,external_id:`osm:${x.type}:${x.id}`}));
-    await admin.from('leads').delete().eq('maker_id',makerId).eq('user_id',user.id).eq('product_id',productId);if(rows.length)await admin.from('leads').insert(rows);
+    const seen=new Set();
+    const rows=elements.filter(x=>x.tags?.name).map(x=>({maker_id:makerId,product_id:productId,user_id:user.id,business_name:x.tags.name,score:0,rationale:'Awaiting Gemini ranking of this source-linked OpenStreetMap result.',offer:'',outreach_draft:'',latitude:x.lat||x.center?.lat,longitude:x.lon||x.center?.lon,source:'OpenStreetMap',source_url:`https://www.openstreetmap.org/${x.type}/${x.id}`,external_id:`osm:${x.type}:${x.id}`})).filter(row=>!seen.has(row.external_id)&&seen.add(row.external_id)).slice(0,30);
+    const {error:deleteError}=await admin.from('leads').delete().eq('maker_id',makerId).eq('user_id',user.id).eq('product_id',productId);
+    if(deleteError)throw new Error(`Could not clear previous results: ${deleteError.message}`);
+    if(rows.length){const {error:insertError}=await admin.from('leads').insert(rows);if(insertError)throw new Error(`Could not save discovered businesses: ${insertError.message}`)}
     await admin.from('agent_runs').insert({maker_id:makerId,user_id:user.id,action:'discover_nearby_openstreetmap',input_summary:`${product.name}; ${maker.address||'browser location'}`,output_summary:`${rows.length} OpenStreetMap businesses discovered`});
     return Response.json({discovered:rows.length});
   }catch(error){return Response.json({error:error.message||'Discovery failed'},{status:500})}
