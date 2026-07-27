@@ -29,7 +29,9 @@ export async function POST(request) {
     let lat=latitude||maker.latitude,lon=longitude||maker.longitude;
     if(!lat||!lon){const geo=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(maker.address)}`,{headers:{'User-Agent':'BatchBridge hackathon pilot (contact: support@batchbridge.local)',Accept:'application/json'}});const places=await geo.json();if(!places[0])return Response.json({error:'Address was not found. Include city and postcode, then retry.'},{status:404});lat=Number(places[0].lat);lon=Number(places[0].lon)}
     await admin.from('makers').update({latitude:lat,longitude:lon}).eq('id',makerId);
-    const words=`${maker.category||''} ${product.name||''}`.toLowerCase();
+    // A maker can sell very different products. Match buyers to the selected product,
+    // never to the maker's broad business category.
+    const words=`${product.name||''} ${product.description||''}`.toLowerCase();
     const soap=/soap|skincare|skin care|cosmetic|beauty/.test(words);
     const food=/cake|pastry|bakery|brownie|cookie|chocolate|food|snack/.test(words);
     const selectors=soap?'nwr["shop"~"beauty|cosmetics|gift|variety_store|department_store|convenience"]':food?'nwr["amenity"~"cafe|restaurant|fast_food"] ; nwr["shop"~"bakery|confectionery|pastry|supermarket"]':'nwr["shop"~"gift|variety_store|convenience|supermarket|department_store"]';
