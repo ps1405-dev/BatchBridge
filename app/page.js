@@ -105,8 +105,6 @@ export default function Home() {
           name,
           wholesale_price: f.get("price"),
           capacity: f.get("capacity"),
-          description: f.get("description"),
-          market_segment: f.get("segment"),
         });
     setNotice(error?.message || "Product added.");
     if (!error) e.currentTarget.reset();
@@ -228,8 +226,6 @@ export default function Home() {
             <h2>Catalogue</h2>
             <form onSubmit={add}>
               <input name="name" required placeholder="Product" />
-              <input name="description" required placeholder="Description, ingredients/material, use" />
-              <select name="segment" required defaultValue=""><option value="" disabled>Market position</option><option>Mass</option><option>Premium</option><option>Premium-mass</option><option>Luxury</option></select>
               <input name="price" required placeholder="Wholesale price" />
               <input name="capacity" required placeholder="Capacity" />
               <button>Add product</button>
