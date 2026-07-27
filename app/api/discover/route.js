@@ -28,7 +28,11 @@ export async function POST(request) {
     let lat=latitude||maker.latitude,lon=longitude||maker.longitude;
     if(!lat||!lon){const geo=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(maker.address)}`,{headers:{'User-Agent':'BatchBridge hackathon pilot (contact: support@batchbridge.local)',Accept:'application/json'}});const places=await geo.json();if(!places[0])return Response.json({error:'Address was not found. Include city and postcode, then retry.'},{status:404});lat=Number(places[0].lat);lon=Number(places[0].lon)}
     await admin.from('makers').update({latitude:lat,longitude:lon}).eq('id',makerId);
-    const query=`[out:json][timeout:40];(nwr["amenity"~"cafe|restaurant|fast_food"](around:8000,${lat},${lon});nwr["shop"~"bakery|confectionery|pastry"](around:8000,${lat},${lon}););out center tags;`;
+    const words=`${maker.category||''} ${product.name||''}`.toLowerCase();
+    const soap=/soap|skincare|skin care|cosmetic|beauty/.test(words);
+    const food=/cake|pastry|bakery|brownie|cookie|chocolate|food|snack/.test(words);
+    const selectors=soap?'nwr["shop"~"beauty|cosmetics|gift|variety_store|department_store|convenience"]':food?'nwr["amenity"~"cafe|restaurant|fast_food"] ; nwr["shop"~"bakery|confectionery|pastry|supermarket"]':'nwr["shop"~"gift|variety_store|convenience|supermarket|department_store"]';
+    const query=`[out:json][timeout:40];(${selectors.split(' ; ').map(s=>`${s}(around:8000,${lat},${lon});`).join('')});out center tags;`;
     const elements=await nearbyBusinesses(query);
     const seen=new Set();
     const rows=elements.filter(x=>x.tags?.name).map(x=>({maker_id:makerId,product_id:productId,user_id:user.id,business_name:x.tags.name,score:0,rationale:'Awaiting Gemini ranking of this source-linked OpenStreetMap result.',offer:'',outreach_draft:'',latitude:x.lat||x.center?.lat,longitude:x.lon||x.center?.lon,source:'OpenStreetMap',source_url:`https://www.openstreetmap.org/${x.type}/${x.id}`,external_id:`osm:${x.type}:${x.id}`})).filter(row=>!seen.has(row.external_id)&&seen.add(row.external_id)).slice(0,30);
