@@ -95,14 +95,18 @@ export default function Home() {
   }
   async function add(e) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget),
+    const f = new FormData(e.currentTarget), name=String(f.get("name")).trim();
+    if(products.some(p=>p.name.trim().toLowerCase()===name.toLowerCase())){setNotice(`“${name}” already exists. Edit the existing product instead of adding it again.`);return}
+    const
       { error } = await supabase
         .from("products")
         .insert({
           maker_id: maker.id,
-          name: f.get("name"),
+          name,
           wholesale_price: f.get("price"),
           capacity: f.get("capacity"),
+          description: f.get("description"),
+          market_segment: f.get("segment"),
         });
     setNotice(error?.message || "Product added.");
     if (!error) e.currentTarget.reset();
@@ -224,6 +228,8 @@ export default function Home() {
             <h2>Catalogue</h2>
             <form onSubmit={add}>
               <input name="name" required placeholder="Product" />
+              <input name="description" required placeholder="Description, ingredients/material, use" />
+              <select name="segment" required defaultValue=""><option value="" disabled>Market position</option><option>Mass</option><option>Premium</option><option>Premium-mass</option><option>Luxury</option></select>
               <input name="price" required placeholder="Wholesale price" />
               <input name="capacity" required placeholder="Capacity" />
               <button>Add product</button>
@@ -279,8 +285,9 @@ export default function Home() {
                 disabled={!rankLeads.length || busy === "rank"}
                 onClick={() => { setViewId(rankId); api("/api/agent/run", rankId, {}, "rank"); }}
               >
-                Rank {product(rankId)?.name}
+                {busy === "rank" ? "Ranking with Gemini… please wait (up to 60 sec)" : `Rank ${product(rankId)?.name}`}
               </button>
+              {busy === "rank" && <small>Gemini is comparing the discovered buyers. Please do not click again.</small>}
               <button
                 disabled={!rankId || busy === "advice"}
                 onClick={() => api("/api/product-advice", rankId, {}, "advice")}

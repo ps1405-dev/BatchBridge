@@ -9,5 +9,7 @@ alter table leads add column if not exists source text not null default 'OpenStr
 alter table leads add column if not exists source_url text;
 alter table leads add column if not exists external_id text;
 alter table leads add column if not exists product_id uuid references products(id) on delete cascade;
+alter table products add column if not exists description text;
+alter table products add column if not exists market_segment text;
 drop index if exists leads_maker_external_id_unique;
 create unique index if not exists leads_product_external_id_unique on leads(product_id, external_id) where external_id is not null;
