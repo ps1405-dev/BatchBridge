@@ -101,20 +101,15 @@ export default function Home() {
     setBusy("product");
     const f = new FormData(e.currentTarget), name=String(f.get("name")).trim();
     if(products.some(p=>p.name.trim().toLowerCase()===name.toLowerCase())){setNotice(`“${name}” already exists. Edit the existing product instead of adding it again.`);productLock.current=false;setBusy("");return}
-    const
-      { error } = await supabase
-        .from("products")
-        .insert({
-          maker_id: maker.id,
-          name,
-          wholesale_price: f.get("price"),
-          capacity: f.get("capacity"),
-        });
-    setNotice(error?.message || "Product added.");
-    if (!error) e.currentTarget.reset();
-    await load();
-    productLock.current=false;
-    setBusy("");
+    try{
+      const insert=supabase.from("products").insert({maker_id:maker.id,name,wholesale_price:f.get("price"),capacity:f.get("capacity")}).select().single();
+      const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Saving took too long. Check your connection and try once.")),12000));
+      const {data,error}=await Promise.race([insert,timeout]);
+      if(error)throw error;
+      setProducts(current=>[...current,data]);
+      setNotice("Product added.");
+      e.currentTarget.reset();
+    }catch(error){setNotice(error.message||"Could not add product.")}finally{productLock.current=false;setBusy("")}
   }
   async function api(path, productId, body = {}, label) {
     if (requestLock.current) return;
