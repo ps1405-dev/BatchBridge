@@ -8,4 +8,6 @@ alter table leads add column if not exists longitude double precision;
 alter table leads add column if not exists source text not null default 'OpenStreetMap';
 alter table leads add column if not exists source_url text;
 alter table leads add column if not exists external_id text;
-create unique index if not exists leads_maker_external_id_unique on leads(maker_id, external_id) where external_id is not null;
+alter table leads add column if not exists product_id uuid references products(id) on delete cascade;
+drop index if exists leads_maker_external_id_unique;
+create unique index if not exists leads_product_external_id_unique on leads(product_id, external_id) where external_id is not null;
